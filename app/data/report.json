@@ -1,0 +1,125 @@
+[
+  {
+    "prompt": "Explain tradeoffs of transformer depth vs width for long-form writing.",
+    "outline": [
+      "Introduction",
+      "Method",
+      "Results"
+    ],
+    "baseline": {
+      "structure": 0.0,
+      "plan": 0.2,
+      "drift": 0.8847,
+      "halluc": 0.0
+    },
+    "planfirst": {
+      "structure": 0.5256,
+      "plan": 1.0,
+      "drift": 0.8419,
+      "halluc": 1.0
+    }
+  },
+  {
+    "prompt": "Design a week-long lesson plan to teach recursion to high schoolers.",
+    "outline": [
+      "Introduction to Recursion",
+      "Recursion in Programming",
+      "Recursion in Programming with Python"
+    ],
+    "baseline": {
+      "structure": 0.0,
+      "plan": 0.2,
+      "drift": 0.6046,
+      "halluc": 0.0
+    },
+    "planfirst": {
+      "structure": 0.088,
+      "plan": 1.0,
+      "drift": 0.5292,
+      "halluc": 1.0
+    }
+  },
+  {
+    "prompt": "Write a policy brief on urban heat mitigation (with outline & sections).",
+    "outline": [
+      "Introduction",
+      "Method",
+      "Results"
+    ],
+    "baseline": {
+      "structure": 0.0,
+      "plan": 0.2,
+      "drift": 0.7729,
+      "halluc": 0.0
+    },
+    "planfirst": {
+      "structure": 0.5159,
+      "plan": 1.0,
+      "drift": 0.7343,
+      "halluc": 1.0
+    }
+  },
+  {
+    "prompt": "Draft a research-methods section for a usability study on note-taking apps.",
+    "outline": [
+      "Introduction",
+      "Literature Review",
+      "Methodology",
+      "Results"
+    ],
+    "baseline": {
+      "structure": 0.3667,
+      "plan": 0.2,
+      "drift": 0.6685,
+      "halluc": 0.0
+    },
+    "planfirst": {
+      "structure": 0.5642,
+      "plan": 1.0,
+      "drift": 0.6226,
+      "halluc": 1.0
+    }
+  },
+  {
+    "prompt": "Create a troubleshooting guide for a failing CI pipeline.",
+    "outline": [
+      "Check the logs for any errors or warnings.",
+      "Check the build status in the CI/CD pipeline.",
+      "Check the build logs for any errors or warnings.",
+      "Check the environment variables in the build pipeline.",
+      "Check the configuration of the build pipeline.",
+      "Check the configuration of the repository."
+    ],
+    "baseline": {
+      "structure": 0.0,
+      "plan": 0.2,
+      "drift": 0.4094,
+      "halluc": 0.0
+    },
+    "planfirst": {
+      "structure": 0.1626,
+      "plan": 1.0,
+      "drift": 0.423,
+      "halluc": 1.0
+    }
+  },
+  {
+    "prompt": "Outline and write a specific aims page for a wildfire forecasting grant.",
+    "outline": [
+      "Introduction:",
+      "Background:"
+    ],
+    "baseline": {
+      "structure": 0.0,
+      "plan": 0.2,
+      "drift": 0.7725,
+      "halluc": 0.0
+    },
+    "planfirst": {
+      "structure": 0.5629,
+      "plan": 1.0,
+      "drift": 0.8117,
+      "halluc": 1.0
+    }
+  }
+]

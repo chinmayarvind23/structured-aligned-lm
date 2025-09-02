@@ -1,0 +1,48 @@
+PS C:\Users\chinm\Documents\Structured-Aligned-LM\app> uv run python train_sft.py
+Map: 100%|███████████████████████████████████████| 2000/2000 [00:00<00:00, 3651.40 examples/s]
+Map: 100%|█████████████████████████████████████████| 300/300 [00:00<00:00, 1892.64 examples/s]
+  0%|                                                                 | 0/250 [00:00<?, ?it/s]`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+{'loss': 2.0124, 'grad_norm': 0.65625, 'learning_rate': 9.97849063861667e-05, 'epoch': 0.08}
+{'loss': 1.6164, 'grad_norm': 0.56640625, 'learning_rate': 9.68316749134364e-05, 'epoch': 0.16}
+{'loss': 1.4092, 'grad_norm': 0.466796875, 'learning_rate': 9.060611006213832e-05, 'epoch': 0.24}
+{'loss': 1.361, 'grad_norm': 0.5, 'learning_rate': 8.154321920070414e-05, 'epoch': 0.32}
+{'loss': 1.3579, 'grad_norm': 0.46875, 'learning_rate': 7.027626604064969e-05, 'epoch': 0.4}
+{'loss': 1.3584, 'grad_norm': 0.41015625, 'learning_rate': 5.7592521739125726e-05, 'epoch': 0.48}
+{'loss': 1.3361, 'grad_norm': 0.45703125, 'learning_rate': 4.4378254829551396e-05, 'epoch': 0.56}
+{'loss': 1.3409, 'grad_norm': 0.40234375, 'learning_rate': 3.1556803773799614e-05, 'epoch': 0.64}
+{'loss': 1.3079, 'grad_norm': 0.384765625, 'learning_rate': 2.002405927680374e-05, 'epoch': 0.72}
+{'loss': 1.3162, 'grad_norm': 0.5703125, 'learning_rate': 1.0585864495652897e-05, 'epoch': 0.8}
+ 80%|███████████████████████████████████████████████████████▏             | 200/250 [06:08<01:35,  1.90s/it]We detected that you are passing `past_key_values` as a tuple and this is deprecated and will be removed in v4.43. Please use an appropriate `Cache` class (https://huggingface.co/docs/transformers/v4.41.3/en/internal/generation_utils#transformers.Cache)
+{'eval_loss': 1.3247534036636353, 'eval_runtime': 19.2066, 'eval_samples_per_second': 15.62, 'eval_steps_per_second': 15.62, 'epoch': 0.8}
+{'loss': 1.2993, 'grad_norm': 0.453125, 'learning_rate': 3.901707263589671e-06, 'epoch': 0.88}
+{'loss': 1.3242, 'grad_norm': 0.44140625, 'learning_rate': 4.386387988014273e-07, 'epoch': 0.96}
+{'train_runtime': 480.2439, 'train_samples_per_second': 4.165, 'train_steps_per_second': 0.521, 'train_loss': 1.4147078132629394, 'epoch': 1.0}
+100%|█████████████████████████████████████████████████████████████████████| 250/250 [08:00<00:00,  1.92s/it]
+SFT done -> checkpoints/sft/adapter
+
+PS C:\Users\chinm\Documents\Structured-Aligned-LM\app> uv run python train_ppo.py
+WARNING:root:A <class 'transformers.models.llama.modeling_llama.LlamaForCausalLM'> model is loaded from 'TinyLlama/TinyLlama-1.1B-Chat-v1.0', and no v_head weight is found. This IS expected if you are not resuming PPO training.
+C:\Users\chinm\Documents\Structured-Aligned-LM\app\.venv\Lib\site-packages\trl\trainer\ppo_trainer.py:267: UserWarning: No dataset is provided. Make sure to set config.batch_size to the correct value before training.
+  warnings.warn(
+We detected that you are passing `past_key_values` as a tuple and this is deprecated and will be removed in v4.43. Please use an appropriate `Cache` class (https://huggingface.co/docs/transformers/v4.41.3/en/internal/generation_utils#transformers.Cache)
+C:\Users\chinm\Documents\Structured-Aligned-LM\app\.venv\Lib\site-packages\trl\trainer\ppo_trainer.py:1301: UserWarning: std(): degrees of freedom is <= 0. Correction should be strictly less than the reduction factor (input numel divided by output numel). (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\ReduceOps.cpp:1823.)
+  std_scores = data["scores"].std()
+C:\Users\chinm\Documents\Structured-Aligned-LM\app\.venv\Lib\site-packages\trl\trainer\ppo_trainer.py:1328: UserWarning: std(): degrees of freedom is <= 0. Correction should be strictly less than the reduction factor (input numel divided by output numel). (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\ReduceOps.cpp:1823.)
+  stats["tokens/queries_len_std"] = torch.std(query_lens).cpu().numpy().item()
+C:\Users\chinm\Documents\Structured-Aligned-LM\app\.venv\Lib\site-packages\trl\trainer\ppo_trainer.py:1331: UserWarning: std(): degrees of freedom is <= 0. Correction should be strictly less than the reduction factor (input numel divided by output numel). (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\ReduceOps.cpp:1823.)
+  stats["tokens/responses_len_std"] = torch.std(response_lens).cpu().numpy().item()
+step 20 reward=0.643
+step 40 reward=0.674
+step 60 reward=0.675
+step 80 reward=0.683
+PPO done -> checkpoints/ppo/adapter
+PS C:\Users\chinm\Documents\Structured-Aligned-LM\app> uv run python batch_eval.py
+Traceback (most recent call last):
+  File "C:\Users\chinm\Documents\Structured-Aligned-LM\app\batch_eval.py", line 12, in <module>
+    from metrics import structure_score, plan_adherence, topic_drift, hallucination_proxy
+ImportError: cannot import name 'topic_drift' from 'metrics' (C:\Users\chinm\Documents\Structured-Aligned-LM\app\metrics.py)
+PS C:\Users\chinm\Documents\Structured-Aligned-LM\app> uv run python -c "import metrics; print('ok:', all(hasattr(metrics, x) for x in ['structure_score','plan_adherence','topic_drift','hallucination_proxy']))"
+ok: True
+PS C:\Users\chinm\Documents\Structured-Aligned-LM\app> uv run python batch_eval.py
+Wrote data/report.json and data/struct_bar.png
+Mean structure: baseline=0.061 plan-first=0.403

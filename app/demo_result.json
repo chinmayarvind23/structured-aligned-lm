@@ -1,0 +1,19 @@
+﻿{
+    "outline":  [
+                    "Introduction",
+                    "Method",
+                    "Results"
+                ],
+    "baseline_text":  "Write a policy brief on urban heat mitigation strategies that can be implemented in urban areas. The brief should include a summary of the current urban heat island effect, its impact on human health and the environment, and the potential benefits and drawbacks of various mitigation strategies. Use data and case studies to support your arguments and provide recommendations for policymakers and urban planners. The style should be clear and concise, with a clear introduction, body, and conclusion.",
+    "plan_text":  "Write a policy brief on urban heat mitigation\n\nUse this Outline:\n1. Introduction\n2. Method\n3. Results\n4. Policy Implications\n5. Conclusion\n\nIntroduction\n\nHeat is one of the most significant environmental challenges facing urban areas. It is caused by the urban heat island effect, which occurs when urban areas absorb and store heat, leading to higher temperatures. This heat can cause health problems, such as heat exhaustion and heat stroke, and affect the economic and social well-being of urban residents. The policy brief aims to examine the effectiveness of urban heat mitigation measures in reducing heat exposure and improving the quality of life for urban residents.\n\nMethod\n\nThe method used in this policy brief is a literature review, which involves a systematic search of peer-reviewed publications and scholarly journals to identify relevant studies and research. The search was conducted using keywords related to urban heat mitigation, heat exposure, and quality of life. The search was conducted in October 2021 and included publications up to August 2021.\n\nResults\n\nThe literature review identified several studies that examined the effectiveness of urban heat mitigation measures in reducing heat exposure and improving the quality of life for urban residents. The studies showed that various measures, such as building retrofitting, green roofs, and public transportation, can reduce heat exposure and improve the quality of life for urban residents.\n\nFor example, a study conducted in Chicago found that building retrofitting reduced heat exposure by 20% and improved indoor air quality. Another study conducted in New York City found that green roofs reduced heat exposure by 30% and improved air quality. A study conducted in Los Angeles found that public transportation reduced heat exposure by 20% and improved air quality.\n\nPolicy Implications\n\nThe policy brief provides policy implications for policymakers. The findings suggest that urban heat mitigation measures should be prioritized as a critical component of any climate action plan. Policymakers should invest in building retrofitting, green roofs, and public transportation to reduce heat exposure and improve the quality of life for urban residents.\n\nConclusion\n\nThe policy brief concludes that urban heat mitigation measures are critical for reducing heat exposure and improving the quality of life for urban residents. The findings suggest that building retrofitting, green roofs, and public transportation are effective measures to reduce heat exposure and improve the quality of life for urban residents. Policymakers should prioritize these measures as a critical component of any climate action plan.",
+    "metrics_baseline":  {
+                             "structure":  0.0,
+                             "plan_adherence":  0.4,
+                             "hallucination_proxy":  0.3333
+                         },
+    "metrics_plan":  {
+                         "structure":  0.4331,
+                         "plan_adherence":  1.0,
+                         "hallucination_proxy":  1.0
+                     }
+}
