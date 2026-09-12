@@ -1,213 +1,209 @@
-# Structued Alignment LM — Plan-First LLM (LoRA SFT + mini-PPO)
+# Structured Alignment LM — Plan-First LLM with LoRA SFT + PPO
 
-Fine-tunes a small LLM to **plan first (Outline) → then write**, and reinforces that behavior with a **structure-aware reward**. Includes a **FastAPI backend** and **Next.js UI** that compare *baseline* vs *plan-first* outputs with simple metrics.
+A small-LLM alignment project that trains **TinyLlama-1.1B** to plan before writing, then reinforces that behavior with a structure-aware PPO objective.
 
-- Built an **end-to-end LLM alignment** system that makes the model **plan first (Outline) → then write** using **LoRA SFT + mini-PPO (RLAIF)** on **TinyLlama-1.1B**; adapters target **Q/K/V/O** projections and run comfortably on a **single RTX 4070 (≈8 GB VRAM)**.
-- **Curated structure-aligned data** from PubMed RCT abstracts into *(prompt, outline→sections)* JSONL pairs to teach discourse scaffolding during SFT.
-- Implemented a **dense reward** `0.6·structure_score + 0.4·plan_adherence`; during PPO, reward rose **0.643 → 0.683**, and **mean structure improved 0.061 → 0.403 (≈6.6×)** on held-out prompts.
-- Shipped a **FastAPI backend** (`/v1/plan`, `/v1/generate`, `/v1/score`, `/v1/compare`) that serves **base → SFT adapter → PPO adapter** at inference (no base merges).
-- Built a **Next.js (App Router) UI** to A/B **baseline vs plan-first** with real-time metrics, demo prompts, CORS, and env-configurable API base.
-- Engineered a **reproducible CUDA environment** with **uv (Python 3.11)** + **PyTorch cu121**, resolved Windows/PowerShell quirks (e.g., `TRANSFORMERS_NO_TORCHVISION`), and kept training/inference efficient.
+The system uses **LoRA supervised fine-tuning (SFT)** to teach an `Outline -> Sections` response format, then applies **mini-PPO / RLAIF** with a dense reward based on structure quality and plan adherence. A FastAPI backend and Next.js UI make it possible to compare baseline and plan-first generations side by side.
 
-**Tech:** PyTorch, HF Transformers, TRL, PEFT, Datasets, FastAPI, Uvicorn, Next.js/React/TypeScript, `uv`, CUDA.
+## Highlights
 
----
+- Fine-tuned **TinyLlama-1.1B** with LoRA adapters on Q/K/V/O attention projections, keeping the base model frozen and training on a single **RTX 4070 with about 8 GB VRAM**.
+- Built structure-aligned training data from PubMed randomized-controlled-trial abstracts, mapping prompts to explicit outlines and corresponding numbered sections.
+- Increased mean held-out **structure score from 0.061 to 0.403, about a 6.6x improvement**, while PPO reward increased from **0.643 to 0.683**.
+- Served the full **base -> SFT adapter -> PPO adapter** stack through FastAPI without merging adapters into the base model.
+- Built a Next.js comparison UI for baseline-vs-plan-first generation with live structure and plan-adherence metrics.
+- Kept the training and inference path reproducible with PyTorch, Hugging Face Transformers, TRL, PEFT, `uv`, and CUDA.
 
-## How it works
+## Why this matters
 
-1. **Data → “plan then write” pairs**  
-   Training examples tell the model to (a) produce a 3–6 bullet **Outline**, then (b) write one **numbered section per bullet**. Responses contain `Outline:` plus the sectioned text. This teaches the *habit* of planning before writing.
+Small language models can often produce acceptable prose while drifting away from a requested structure or omitting planned sections. This project tests whether explicit planning behavior can be taught and reinforced without moving to a larger model.
 
-2. **LoRA SFT (supervised fine-tuning)**  
-   We attach **LoRA adapters** to attention projections (Q/K/V/O) and train only a tiny low-rank **ΔW** that’s *added at runtime* to the frozen base. This is fast, memory-light, and preserves base knowledge.
+The strongest observed result is the held-out structure improvement:
 
-3. **mini-PPO (RLAIF) with a structure reward**  
-   For each prompt: generate an **Outline** (greedy) → generate the **Sectioned answer** (sampled) → compute  
-   `reward = 0.6 * structure_score + 0.4 * plan_adherence`.  
-   PPO nudges policy toward higher reward. PPO adapter stacks on top of SFT.
+| Metric | Baseline / earlier stage | PPO-aligned result |
+| --- | ---: | ---: |
+| Mean structure score | **0.061** | **0.403** |
+| Relative change |  | **~6.6x** |
+| PPO reward | **0.643** | **0.683** |
 
-4. **Serving & UI**  
-   FastAPI loads base → SFT adapter → PPO adapter. Endpoints: `/v1/plan`, `/v1/generate`, `/v1/score`, `/v1/compare`.  
-   Next.js UI calls `/v1/compare`, shows both texts & metrics, and includes demo prompts.
+The result is intentionally narrow: it demonstrates improved structural behavior under this project's metrics and held-out prompts. It is not a claim that the aligned model is universally better at factuality, reasoning, or general language quality.
 
----
+## What the model learns
 
-## Repo layout
+Training examples require the model to:
 
-    app/
-      build_dataset.py        # Create (prompt, response) pairs for outline→sections SFT
-      train_sft.py            # LoRA SFT; saves adapter to checkpoints/sft/adapter
-      train_ppo.py            # PPO with structure reward; saves adapter to checkpoints/ppo/adapter
-      batch_eval.py           # Quick A/B metrics + a bar plot (baseline vs plan-first)
-      metrics.py              # structure_score, plan_adherence, hallucination_proxy
-      main.py                 # FastAPI: /v1/plan, /v1/generate, /v1/score, /v1/compare
-      checkpoints/
-        sft/adapter           # created by train_sft.py
-        ppo/adapter           # created by train_ppo.py
-    frontend/
-      app/page.tsx            # Next.js UI (demo chips + compare panel)
-    pyproject.toml            # uv project + dependencies (Python 3.11)
-    README.md
+1. produce a short **3–6 item outline**;
+2. write one numbered section corresponding to each outline item;
+3. preserve the planned ordering in the final response.
 
----
+The project then measures two main behaviors:
 
-## Prerequisites
+- **structure score** — whether the answer exhibits the expected sectioning, headings, transitions, and cohesion;
+- **plan adherence** — whether the generated sections cover the outline and preserve its order.
 
-- **Windows + PowerShell**, **VS Code**
-- **NVIDIA GPU** + driver (check with `nvidia-smi`)
-- **Python** managed by **uv** → https://docs.astral.sh/uv/
-- **Node 18+** (for the Next.js app)
-- Internet access for Hugging Face downloads
+PPO uses the local dense reward:
 
-> Windows note: Hugging Face may warn about symlink cache; it still works (degraded cache).
+```text
+reward = 0.6 * structure_score + 0.4 * plan_adherence
+```
 
----
+This makes the optimization target inspectable and reproducible rather than relying on an external black-box judge.
 
-## 1) Environment setup
+## Training pipeline
 
-From repo root (where `pyproject.toml` lives):
+```text
+PubMed RCT abstracts
+        |
+        v
+Outline -> Sections training pairs
+        |
+        v
+LoRA supervised fine-tuning
+        |
+        v
+SFT adapter
+        |
+        v
+Plan-first generation + local reward
+        |
+        v
+mini-PPO / RLAIF
+        |
+        v
+PPO adapter
+        |
+        v
+FastAPI comparison service
+```
 
-    uv venv
-    uv sync
+### 1. Data construction
 
-**Verify CUDA in the venv**
+`app/build_dataset.py` creates structure-aligned JSONL examples. Each response contains an explicit `Outline:` followed by numbered sections corresponding to the plan.
 
-    uv run python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.version.cuda)"
-    # Expect: is_available True and a CUDA version (e.g., 12.1)
+### 2. LoRA SFT
 
-If CUDA is `False`, see **Troubleshooting**.
+`app/train_sft.py` attaches low-rank adapters to the attention Q/K/V/O projections while leaving the TinyLlama base weights frozen.
 
----
+The design keeps the training footprint small enough for a consumer GPU and preserves the original base model separately from the learned behavior adapters.
 
-## 2) Data → SFT → PPO
+### 3. PPO alignment
 
-### A) Build dataset
+`app/train_ppo.py` generates an outline, samples the sectioned response, computes the structure/plan reward, and updates a PPO adapter on top of the SFT stage.
 
-Creates `data/struct_train.jsonl` & `data/struct_val.jsonl` with “Outline → Sections” samples.
+The resulting inference stack is:
 
-    uv run python app/build_dataset.py
+```text
+TinyLlama base -> SFT adapter -> PPO adapter
+```
 
-### B) Supervised fine-tuning (LoRA)
+Adapters are loaded at inference time rather than permanently merged into the base model.
 
-Learns the plan-first habit.
+## Serving and evaluation
 
-    uv run python app/train_sft.py
-    # Output: checkpoints/sft/adapter
+The FastAPI service exposes:
 
-### C) mini-PPO (structure reward)
+- `POST /v1/plan` — generate an outline;
+- `POST /v1/generate` — generate baseline or plan-first text;
+- `POST /v1/score` — compute structure, plan-adherence, and hallucination-proxy metrics;
+- `POST /v1/compare` — run baseline and plan-first generation side by side.
 
-Reinforces structure and plan adherence:
+The Next.js UI calls `/v1/compare` and displays both generations together with their metrics, making the behavior change directly inspectable rather than only reporting an aggregate training number.
 
-- `structure_score(text)` — headings/transition cues + cohesion  
-- `plan_adherence(outline, text)` — coverage + order consistency
+Batch evaluation is available through:
 
-    uv run python app/train_ppo.py
-    # Output: checkpoints/ppo/adapter
-    # Console prints: step N reward=0.xxx (should trend up modestly)
+```powershell
+uv run python app/batch_eval.py
+```
 
----
+which writes:
 
-## 3) Run the API & UI
+- `data/report.json`
+- `data/struct_bar.png`
 
-### A) Start FastAPI
+## Technology
 
-    uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
-    # Swagger UI: http://localhost:8000/docs
+**PyTorch · Hugging Face Transformers · TRL · PEFT · FastAPI · Next.js · CUDA**
 
-### B) Start Next.js
+PyTorch and Transformers provide model execution, PEFT supplies LoRA adapters, and TRL implements the PPO stage. FastAPI serves planning/generation/scoring endpoints, while Next.js provides the baseline-vs-aligned comparison interface. `uv` and pinned CUDA-compatible dependencies keep the local training environment reproducible.
 
-    cd frontend
-    # Optional: set API base (defaults to http://localhost:8000)
-    # PowerShell:
-    $env:NEXT_PUBLIC_API_BASE = "http://localhost:8000"
-    npm i
-    npm run dev
-    # Open http://localhost:3000
+## Repository structure
 
----
+```text
+app/
+├── build_dataset.py   # outline -> sections SFT dataset
+├── train_sft.py       # LoRA supervised fine-tuning
+├── train_ppo.py       # PPO with structure-aware reward
+├── batch_eval.py      # baseline vs plan-first evaluation
+├── metrics.py         # structure, adherence, hallucination proxy
+└── main.py            # FastAPI service
 
-## 4) Smoke-tests
+checkpoints/
+├── sft/adapter
+└── ppo/adapter
 
-**Plan only (PowerShell):**
+frontend/
+└── app/page.tsx       # Next.js comparison UI
+```
 
-    Invoke-RestMethod http://localhost:8000/v1/plan -Method POST `
-      -ContentType "application/json" `
-      -Body (@{prompt="Draft a research-methods section for note-taking apps"} | ConvertTo-Json)
+## Run locally
 
-**Full compare (PowerShell):**
+### Environment
 
-    Invoke-RestMethod http://localhost:8000/v1/compare -Method POST `
-      -ContentType "application/json" `
-      -Body (@{prompt="Write a policy brief on urban heat mitigation"} | ConvertTo-Json) | ConvertTo-Json
+Requirements:
 
-**In the UI:** paste your prompt or click a **Demo** chip → **Submit & Compare**.
+- Python 3.11
+- NVIDIA GPU for the trained-model path
+- Node 18+
+- `uv`
 
----
+```powershell
+uv venv
+uv sync
+uv run python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.version.cuda)"
+```
 
-## 5) Batch evaluation (optional)
+### Build the dataset
 
-Compare mean structure across several prompts and save a plot.
+```powershell
+uv run python app/build_dataset.py
+```
 
-    uv run python app/batch_eval.py
-    # Outputs:
-    # - data/report.json (per-prompt metrics)
-    # - data/struct_bar.png (mean structure; plan-first should be ↑)
+### Train SFT
 
----
+```powershell
+uv run python app/train_sft.py
+```
 
-## Design details
+### Train PPO
 
-- **Why LoRA:** train tiny low-rank adapters (A/B) that create a **ΔW** added to the frozen base weight → efficient and preserves knowledge.
-- **QLoRA vs LoRA:** QLoRA = base in 4-bit + LoRA adapters. Here we use standard **LoRA** on a 1.1B base (fits on consumer GPUs) to keep setup simple.
-- **Adapters stacking:** base → **SFT adapter** → **PPO adapter** applied at load time (no heavy merges).
-- **Reward signals:** purely local, no external judge—fast and reproducible.
+```powershell
+uv run python app/train_ppo.py
+```
 
----
+### Start the API
 
-## Endpoints
+```powershell
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
 
-- **POST `/v1/plan`**  
-  **Body:** `{ "prompt": "..." }`  
-  **Resp:** `{ "outline": ["..."] }`
+### Start the frontend
 
-- **POST `/v1/generate`**  
-  **Body:** `{ "prompt": "...", "outline"?: [...], "strategy": "baseline" | "plan-first" }`  
-  **Resp:** `{ "text": "..." }` (and `outline` if plan-first)
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
-- **POST `/v1/score`**  
-  **Body:** `{ "prompt": "...", "outline": [...], "text": "..." }`  
-  **Resp:** `{ "structure": x, "plan_adherence": y, "hallucination_proxy": z }`
+Open `http://localhost:3000` and compare baseline and plan-first generations.
 
-- **POST `/v1/compare`**  
-  **Body:** `{ "prompt": "..." }`  
-  **Resp:** `{ outline, baseline_text, plan_text, metrics_baseline, metrics_plan }`
+## Design choices
 
----
+- **LoRA instead of full fine-tuning:** limits trainable parameters and keeps the 1.1B model practical on a consumer GPU.
+- **Standard LoRA instead of QLoRA:** TinyLlama fits within the available GPU budget, so 4-bit base quantization was not required for this implementation.
+- **Adapter stacking:** keeps base, SFT, and PPO stages separable for inspection and ablation.
+- **Local reward instead of an external judge:** makes the alignment signal inexpensive and reproducible, while also limiting the claim to the behaviors that reward actually measures.
 
-## Troubleshooting
+## Scope and limitations
 
-**CUDA shows False / CPU wheel installed**
+This project measures **structure and plan adherence**, not general intelligence. The reward is hand-designed and local, so improvements should be interpreted as evidence that the model follows the project's desired response structure more consistently, not as evidence of broad capability improvement.
 
-    # Reinstall CUDA wheels (example for cu121)
-    uv pip uninstall torch torchvision torchaudio
-    uv pip install --index-url https://download.pytorch.org/whl/cu121 torch==2.5.1 torchvision torchaudio
-    uv run python -c "import torch; print(torch.cuda.is_available(), torch.version.cuda)"
-
-**Transformers importing torchvision (text-only)**
-
-    $env:TRANSFORMERS_NO_TORCHVISION = "1"
-
-**Hallucination score seems “high”**  
-The proxy penalizes **uncited numbers**. Lower it by:
-- Prompting “avoid specific statistics / avoid numbers,” or
-- Adding simple `[ref]` tags when numbers appear, or
-- Reducing numeral weight in `app/metrics.py`.
-
-**Slow / OOM**  
-Lower `max_new_tokens` (e.g., 650 → 320) in `train_ppo.py`, `batch_eval.py`, and `app/main.py`.
-
----
-
-## Notes
-- Remove `checkpoints/ppo/adapter` to ablate PPO and see pure SFT behavior.
-- To try a larger base (e.g., 3B), update the `BASE` constant and ensure VRAM is sufficient.
+The TinyLlama-1.1B base was chosen to make the full SFT/PPO workflow feasible on a single consumer GPU. Larger models may behave differently and would require separate evaluation.
